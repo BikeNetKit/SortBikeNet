@@ -1,6 +1,7 @@
 [![PyPI Version](https://img.shields.io/pypi/v/sortbikenet?color=10d249)](https://pypi.org/project/SortBikeNet/)
 
-The Python package `sortbikenet` is in the planning phase and  not yet being developed.
+> [!CAUTION]  
+> SortBikeNet is currently in Alpha: It is under heavy development and *not* stable enough to use yet, likely to contain breaking bugs. Breaking changes may be added anytime.
 
 ## Installation
 

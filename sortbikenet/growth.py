@@ -7,7 +7,7 @@ import numpy as np
 import networkx as nx
 import momepy as mp
 import shapely
-from .metrics import directness
+from metrics import directness
 
 
 class Orderbike:

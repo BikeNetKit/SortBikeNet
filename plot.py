@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import networkx as nx
 import shapely
 
-from .utils import get_node_positions
+from sortbikenet.utils import get_node_positions
 
 
 def plot_growth(

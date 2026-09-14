@@ -1,6 +1,7 @@
 # <a href="https://docs.bikenetkit.org/SortBikeNet/"><img src="https://github.com/BikeNetKit/SortBikeNet/raw/main/docs/source/_static/logo_sortbikenet.svg" alt="FixBikeNet" width="275.32" height="59"></a>
 
 [![PyPI Version](https://img.shields.io/pypi/v/sortbikenet?color=10d249)](https://pypi.org/project/SortBikeNet/)
+[![Mastodon Follow](https://img.shields.io/mastodon/follow/116693348622375119?domain=https%3A%2F%2Ffosstodon.org)](https://fosstodon.org/@BikeNetKit)
 
 > [!CAUTION]  
 > SortBikeNet is currently in Alpha: It is under heavy development and *not* stable enough to use yet, likely to contain breaking bugs. Breaking changes may be added anytime.

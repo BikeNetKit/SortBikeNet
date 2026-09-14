@@ -1,3 +1,5 @@
+# <a href="https://docs.bikenetkit.org/SortBikeNet/"><img src="https://github.com/BikeNetKit/SortBikeNet/raw/main/docs/source/_static/logo_sortbikenet.svg" alt="FixBikeNet" width="275.32" height="59"></a>
+
 [![PyPI Version](https://img.shields.io/pypi/v/sortbikenet?color=10d249)](https://pypi.org/project/SortBikeNet/)
 
 > [!CAUTION]  

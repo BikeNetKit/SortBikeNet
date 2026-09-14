@@ -8,7 +8,7 @@ import numpy as np
 import igraph as ig
 import scipy
 from haversine import haversine
-from .utils import get_node_positions
+from utils import get_node_positions
 
 
 def coverage(G, buff_size):

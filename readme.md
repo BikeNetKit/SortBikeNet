@@ -18,6 +18,11 @@ In development.
 ## Docs
 In development.
 
+## Origin
+The source code builds on [the code from the research paper](https://github.com/csebastiao/orderbike) _The trade-off between directness and coverage in transport network growth_.
+
+**Publication**: [https://doi.org/10.1007/s41109-026-00792-5](https://doi.org/10.1007/s41109-026-00792-5)
+
 ## Supported by
 Development of BikeNetKit/SortBikeNet is supported by the [Innovation Fund Denmark](https://innovationsfonden.dk/en) and the EU HORIZON project [JUST STREETS](https://www.just-streets.eu).
 

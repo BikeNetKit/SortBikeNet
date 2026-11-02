@@ -6,11 +6,12 @@ Class to grow a graph.
 import numpy as np
 import networkx as nx
 import momepy as mp
+import osmnx as ox
 import shapely
 from metrics import directness
 
 
-class Orderbike:
+class SortBike:
     def __init__(
         self,
         G,
@@ -64,6 +65,120 @@ class Orderbike:
         self.G_tested = None
         self.grown = False
         self.keep_searching = True
+
+    @staticmethod
+    def download_osmnx(city_query, network_type="all_public", simplify=True, ):
+        """ Download a street network from OpenStreetMap using OSMnx.
+         Parameters
+         ----------
+         city_query : str Place name understood by OSMnx, e.g. "Copenhagen, Denmark".
+         network_type : str OSMnx network type, e.g. "bike", "walk", or "drive".
+         simplify : bool Whether OSMnx should simplify the downloaded graph.
+
+         Returns
+         -------
+         nx.MultiDiGraph The raw OSMnx graph. """
+
+        for custom_tag in ["highway", "cycleway", "bicycle", "cycleway:right", "cycleway:left", "cycleway:both",
+                           "cyclestreet", "access", "area", "service", "motor_vehicle",
+                           "motorcar"]:  # This list should contain all tags used in any custom filters
+            if custom_tag not in ox.settings.useful_tags_way:
+                ox.settings.useful_tags_way.extend(custom_tag)
+
+        custom_filter = ['["highway"~"cycleway|living_street"]',
+    '["highway"~"path|pedestrian|footway"]["bicycle"~"designated|yes|permissive"]["access"!~"private"]',
+    '["cyclestreet"~"yes"]',
+    '["bicycle_road"~"yes"]',
+    '["cycleway"~"track"]',
+    '["cycleway:right"~"track|opposite_track"]', # opposite_track is deprecated, but could still exist
+    '["cycleway:left"~"track|opposite_track"]', # opposite_track is deprecated, but could still exist
+    '["cycleway:both"~"track|opposite_track"]', # opposite_track is deprecated, but could still exist
+]
+
+        g = ox.graph_from_place(
+            city_query, network_type=network_type, custom_filter=custom_filter, retain_all=False, simplify=simplify
+        )
+
+        return g
+
+    @staticmethod
+    def _prepare_osmnx_graph(G):
+        """ Prepare an OSMnx graph for use with Orderbike. The graph is converted to an undirected graph and the edge attributes required by Orderbike are added.
+        Parameters
+        ----------
+        G : nx.MultiDiGraph Graph downloaded with OSMnx.
+
+        Returns
+        -------
+        nx.MultiGraph Prepared graph. """
+        G = ox.projection.project_graph(G)
+        G = ox.convert.to_undirected(G)
+
+        gdf_nodes, gdf_edges = ox.convert.graph_to_gdfs( G, nodes=True, edges=True, fill_edge_geometry=True, )
+
+        if "length" not in gdf_edges.columns: gdf_edges["length"] = gdf_edges.geometry.length
+
+        # Sortbike expects a "built" attribute.
+        # By default, none of the downloaded network is considered
+        # initially built.
+        gdf_edges["built"] = 0
+
+        # This is a provisional mapping for road hierarchies.
+        hierarchy_map = {"primary": 4,
+                          "secondary": 3,
+                          "tertiary": 2,
+                          "residential": 1,
+                          "living_street": 1,
+                          "service": 1,
+                          "unclassified": 1, }
+        def get_highway_value(value):
+            if isinstance(value, list):
+                return value[0]
+            return value
+
+        if "highway" in gdf_edges.columns:
+            gdf_edges["highway"] = gdf_edges["highway"].apply(
+                get_highway_value
+            )
+            gdf_edges["hierarchy"] = (
+                gdf_edges["highway"]
+                .map(hierarchy_map)
+                .fillna(1)
+                .astype(int)
+            )
+        else:
+            # Fall back to the lowest hierarchy level if OSM data does not contain highway information.
+            gdf_edges["hierarchy"] = 1
+
+        # Reconstruct the NetworkX graph with the modified edge attributes.
+        G = ox.convert.graph_from_gdfs(
+            gdf_nodes,
+            gdf_edges,
+            graph_attrs=G.graph,
+        )
+        # make Graph undirected again
+        G = nx.MultiGraph(G)
+
+        return G
+
+    @classmethod
+    def from_osmnx(
+            cls,
+            city_query,
+            network_type="public_all",
+            preset="random",
+            buff_size=200,
+            keep_connected=True,
+            seed=None,
+            simplify=True,
+    ):
+        """ Download and prepare an OSMnx network for Orderbike.
+        This is method combines download_osmnx()
+        and _prepare_osmnx_graph(). """
+
+        G = cls.download_osmnx(city_query=city_query, network_type=network_type, simplify=simplify, )
+        G = cls._prepare_osmnx_graph(G)
+        return cls(G, preset=preset, buff_size=buff_size, built=False, keep_connected=keep_connected, seed=seed, )
 
     def _add_preset_dict(self):
         return {
@@ -464,3 +579,46 @@ class Orderbike:
         edgelist = list(self.G.edges)
         self.random_generator.shuffle(edgelist)
         return {key: -idx for idx, key in enumerate(edgelist)}
+
+    def to_geodataframe(self):
+        """
+        Export the final grown network as a GeoDataFrame
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        geopandas.GeoDataFrame
+            Edges of the grown network, including their attributes
+            and growth step.
+        """
+
+        # Convert the final grown graph to an edge GeoDataFrame.
+        gdf = ox.convert.graph_to_gdfs(
+            self.G_actual,
+            nodes=False,
+            edges=True,
+            fill_edge_geometry=True,
+        )
+
+        # Record the order in which edges were added.
+        # Step 0 represents the initial edge; subsequent steps follow
+        # the order recorded by the growth algorithm.
+        growth_steps = {
+            frozenset(edge[:2]): step
+            for step, edge in enumerate(self.growth_order, start=1)
+        }
+
+        gdf["growth_step"] = [
+            growth_steps.get(frozenset((u, v)), 0)
+            for u, v in zip(
+                gdf.index.get_level_values("u"),
+                gdf.index.get_level_values("v"),
+            )
+        ]
+
+        # Reset the index so u, v, and key are ordinary columns.
+        gdf = gdf.reset_index()
+
+        return gdf

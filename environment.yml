@@ -1,0 +1,8 @@
+name: sbnenv
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.12
+  - matplotlib
+  - osmnx>=1.9.4
+  - geopandas>=0.14

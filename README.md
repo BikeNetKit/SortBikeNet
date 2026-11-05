@@ -20,7 +20,8 @@ pip install sortbikenet
 In development.
 
 ## Docs
-In development.
+In development.  
+See also our [Frequently Asked Questions](https://faq.bikenetkit.org).
 
 ## Origin
 The source code builds on [the code from the research paper](https://github.com/csebastiao/orderbike) _The trade-off between directness and coverage in transport network growth_.
